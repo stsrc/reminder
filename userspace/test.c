@@ -36,7 +36,7 @@ int main (int argc, char *argv[])
 			"E THAN 32 CHARS \0";
 		size_of_line = strlen(line_to_write);
 	}
-	printf("Line to write: %s", line_to_write);
+	printf("Line to write: %s\n", line_to_write);
 	ret = write(fd, line_to_write, (size_t)size_of_line);
 	if(ret >= 0) {
 		printf("Number of bytes in written string: %d, ", (int)size_of_line); 
@@ -47,7 +47,7 @@ int main (int argc, char *argv[])
 		printf("to the number of written bytes: %d!\n",(int)ret);
 	} else {
 		perror("write");
-		printf("Error occured, ret value equal to %d", (int)ret);
+		printf("Error occured, ret value equal to %d\n", (int)ret);
 	}
 	return 0;
 }

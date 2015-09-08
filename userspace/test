@@ -5,7 +5,7 @@ echo "------------------"
 echo "Compilation starts"
 echo "------------------"
 echo
-gcc -std=gnu99 -Wall -o test.o main.c
+gcc -std=gnu99 -Wall -o test.o test.c
 if [ $? -ne 0 ]; then
 	echo
 	echo "---------!!--------"
@@ -26,6 +26,7 @@ if [ $? -ne 0 ]; then
 	echo
 	exit 1
 fi
+sudo chmod a+rwx /dev/reminder
 echo "-----------------------------------------------------------------------"
 echo "Module was inserted with success, starting test with appropriate string"
 echo "-----------------------------------------------------------------------"
@@ -63,7 +64,7 @@ if [ $? -ne 0 ]; then
 	echo
 	exit 1
 fi
-
+sudo chmod a+rwx /dev/reminder
 echo
 echo "---------------------------------------------------------"
 echo "Starting test with to long string, warnings should occure"

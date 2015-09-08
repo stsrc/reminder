@@ -19,7 +19,7 @@ static dev_t dev;
 static struct class *reminder_class = NULL;
 
 
-ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *ppos)
+ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
 	ssize_t notwr = copy_from_user(message, buf, nbytes);
 	if(notwr)
@@ -42,7 +42,7 @@ int reminder_release(struct inode *node, struct file *f)
 
 
 const struct file_operations reminder_fops = {
-	.read = reminder_read,
+	.write = reminder_write,
 	.open = reminder_open,
 	.release = reminder_release,
 };
