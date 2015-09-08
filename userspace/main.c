@@ -3,17 +3,15 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 
 int main (int argc, char *argv[])
 {
 	char *line_to_write = "One, two\0";
 	ssize_t size_of_line = strlen(line_to_write);
 	ssize_t ret = 0;
+	int fd;
 	/* opening with bad oflag */
-	printf("Opening char dev with bad operation flag - O_EXEC\n");
-	int fd = open("/dev/reminder", O_EXEC);
-	perror("open");
-	printf("fd equal to %d, should be < 0\n", fd);
 	printf("\nOpening char dev with bad operation flag - O_RDONLY\n");
 	fd = open("/dev/reminder", O_RDONLY);
 	perror("open");

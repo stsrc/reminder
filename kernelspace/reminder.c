@@ -8,11 +8,16 @@
 #include <linux/module.h>
 #include <linux/cdev.h>
 #include <linux/slab.h> 
-MODULE_LICENSE("DUAL BSD/GPL");
+#include <linux/device.h>
+#include <linux/err.h>
 
-static struct cdev *reminder_cdev;
-static char *message;
+MODULE_LICENSE("GPL");
+
+static struct cdev *reminder_cdev = NULL;
+static char *message = NULL;
 static dev_t dev;
+static struct class *reminder_class = NULL;
+
 
 ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *ppos)
 {
@@ -46,11 +51,20 @@ static int __init reminder_init(void)
 {
 	int rt;
 	size_t msg_size = 32;
+	struct device *device = NULL;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
 		return rt;
+
+	reminder_class = class_create(THIS_MODULE, "reminder");
+	if (IS_ERR(reminder_class)) {
+		rt = PTR_ERR(reminder_class);
+		unregister_chrdev_region(dev, 1);
+		return rt;
+	}
 	reminder_cdev = cdev_alloc();
 	if (!reminder_cdev) {
+		class_destroy(reminder_class);
 		unregister_chrdev_region(dev, 1);
 		return -ENOMEM;
 	}
@@ -58,6 +72,7 @@ static int __init reminder_init(void)
 	message = kmalloc(msg_size, GFP_KERNEL);
 	if (!message) {
 		kfree(reminder_cdev);
+		class_destroy(reminder_class);
 		/*
 		 * it is legal to free cdev by kdev, 
 		 * look to drivers/media/v4l2-core/v4l2-dev.c
@@ -69,9 +84,19 @@ static int __init reminder_init(void)
 	cdev_init(reminder_cdev, &reminder_fops);
 	rt = cdev_add(reminder_cdev, dev, 1);
 	if (rt) {
+		class_destroy(reminder_class);
 		kfree(reminder_cdev);
 		unregister_chrdev_region(dev, 1);
 		kfree(message);
+		return rt;
+	}
+	device = device_create(reminder_class, NULL, dev, NULL, "reminder");
+	if (IS_ERR(device)) {
+		rt = PTR_ERR(device);
+		cdev_del(reminder_cdev);
+		class_destroy(reminder_class);
+		kfree(message);
+		unregister_chrdev_region(dev, 1);
 		return rt;
 	}
 	return 0;
@@ -80,9 +105,11 @@ static int __init reminder_init(void)
 static void __exit reminder_exit(void)
 {
 	printk(KERN_EMERG "%s\n", message);
+	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
+	class_destroy(reminder_class);
+	kfree(message);
 	unregister_chrdev_region(dev, 1);
-	kfree(message);	
 }
 
 module_init(reminder_init);

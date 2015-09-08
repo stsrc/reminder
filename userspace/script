@@ -1,15 +1,16 @@
 #!/bin/bash
-echo
+
+clear
 echo "------------------"
 echo "Compilation starts"
 echo "------------------"
 echo
-gcc -std=gnu99 -Wall -o test main.c
-if [ $? -ne 0 ]	then
+gcc -std=gnu99 -Wall -o test.o main.c
+if [ $? -ne 0 ]; then
 	echo
-	echo "-------!!------"
-	echo "Compile failed!"
-	echo "-------!!------"
+	echo "---------!!--------"
+	echo "Compilation failed!"
+	echo "---------!!--------"
 	exit 1
 fi
 echo
@@ -17,7 +18,7 @@ echo "---------------------------------------------------"
 echo "Compilation succedded, inserting module reminder.ko"
 echo "---------------------------------------------------"
 sudo insmod ../kernelspace/reminder.ko
-if [ $? -ne 0 ] then
+if [ $? -ne 0 ]; then
 	echo
 	echo "---------!!!---------"
 	echo "Module insert failed!"
@@ -25,17 +26,17 @@ if [ $? -ne 0 ] then
 	echo
 	exit 1
 fi
-echo "------------------------------------------------------------------"
-echo "Module was inserted with success, starting test with proper string"
-echo "-------------------------------------------------------------------"
-./main 
+echo "-----------------------------------------------------------------------"
+echo "Module was inserted with success, starting test with appropriate string"
+echo "-----------------------------------------------------------------------"
+./test.o 
 echo
 echo "------------------------------"
 echo "Removing module to show string"
 echo "------------------------------"
 echo
-sudo rmmod
-if [ $? -ne 0] then
+sudo rmmod reminder
+if [ $? -ne 0 ]; then
 	echo
 	echo "----------!!!----------"
 	echo "Removing module failed!"
@@ -54,7 +55,7 @@ echo "Inserting module reminder.ko again"
 echo "----------------------------------"
 echo
 sudo insmod ../kernelspace/reminder.ko
-if [ $? -ne 0 ] then
+if [ $? -ne 0 ]; then
 	echo
 	echo "---------!!!---------"
 	echo "Module insert failed!"
@@ -68,14 +69,14 @@ echo "---------------------------------------------------------"
 echo "Starting test with to long string, warnings should occure"
 echo "---------------------------------------------------------"
 echo
-./main 1 
+./test.o 1 
 echo
 echo "------------------------------"
 echo "Removing module to show string"
 echo "------------------------------"
 echo
-sudo rmmod
-if [ $? -ne 0] then
+sudo rmmod reminder
+if [ $? -ne 0 ]; then
 	echo
 	echo "----------!!!----------"
 	echo "Removing module failed!"
