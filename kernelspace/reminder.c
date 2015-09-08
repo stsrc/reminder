@@ -4,11 +4,15 @@
 #include <linux/init.h>
 #include <linux/fs.h>
 #include <linux/printk.h>
-
+#include <asm/uaccess.h>
+#include <linux/module.h>
+#include <linux/cdev.h>
+#include <linux/slab.h> 
 MODULE_LICENSE("DUAL BSD/GPL");
 
 static struct cdev *reminder_cdev;
 static char *message;
+static dev_t dev;
 
 ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *ppos)
 {
@@ -20,7 +24,7 @@ ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *p
 
 int reminder_open(struct inode *node, struct file *f)
 {
-	if (f->fmode & FMODE_READ)
+	if (f->f_mode & FMODE_READ)
 		return -EPERM;
 	return 0;
 }
@@ -36,13 +40,11 @@ const struct file_operations reminder_fops = {
 	.read = reminder_read,
 	.open = reminder_open,
 	.release = reminder_release,
-}
-
+};
 
 static int __init reminder_init(void)
 {
 	int rt;
-	dev_t dev;
 	size_t msg_size = 32;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
@@ -75,14 +77,12 @@ static int __init reminder_init(void)
 	return 0;
 }
 
-static int __exit reminder_exit(void)
+static void __exit reminder_exit(void)
 {
-	int rt;
 	printk(KERN_EMERG "%s\n", message);
 	cdev_del(reminder_cdev);
 	unregister_chrdev_region(dev, 1);
 	kfree(message);	
-	return 0;
 }
 
 module_init(reminder_init);
