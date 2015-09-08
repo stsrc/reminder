@@ -17,12 +17,20 @@ static struct cdev *reminder_cdev = NULL;
 static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
-
+#define BUF_SIZE 32
 
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
-	ssize_t notwr = copy_from_user(message, buf, nbytes);
-	if(notwr)
+	ssize_t notwr = 0;
+	int temp = 0;
+	if (nbytes > BUF_SIZE) {
+		nbytes = BUF_SIZE;
+		temp = 1;
+	}
+	notwr = copy_from_user(message, buf, nbytes);
+	if (temp)
+		message[BUF_SIZE - 1] = '\0';
+	if (notwr)
 		return -ENOSPC;
 	return nbytes;
 }
@@ -50,7 +58,7 @@ const struct file_operations reminder_fops = {
 static int __init reminder_init(void)
 {
 	int rt;
-	size_t msg_size = 32;
+	size_t msg_size = BUF_SIZE;
 	struct device *device = NULL;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
