@@ -7,12 +7,12 @@
 
 MODULE_LICENSE("DUAL BSD/GPL");
 
-struct cdev *reminder_cdev; //IT SHOULDN'T BE HERE??
-char *message;
+static struct cdev *reminder_cdev;
+static char *message;
 
 ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *ppos)
 {
-	ssize_t notwr = copy_from_user(display_data, buf, nbytes);
+	ssize_t notwr = copy_from_user(message, buf, nbytes);
 	if(notwr)
 		return -ENOSPC;
 	return nbytes;
@@ -20,12 +20,14 @@ ssize_t reminder_read(struct file *f, char __user *buf, size_t nbytes, loff_t *p
 
 int reminder_open(struct inode *node, struct file *f)
 {
-
+	if (f->fmode & FMODE_READ)
+		return -EPERM;
+	return 0;
 }
 
 int reminder_release(struct inode *node, struct file *f)
 {
-
+	return 0;
 }
 
 
@@ -41,7 +43,7 @@ static int __init reminder_init(void)
 {
 	int rt;
 	dev_t dev;
-	size_t msg_size = 100;
+	size_t msg_size = 32;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
 		return rt;
@@ -53,7 +55,11 @@ static int __init reminder_init(void)
 	
 	message = kmalloc(msg_size, GFP_KERNEL);
 	if (!message) {
-		cdev_del(reminder_cdev); //SHOULD IT BE HERE?
+		kfree(reminder_cdev);
+		/*
+		 * it is legal to free cdev by kdev, 
+		 * look to drivers/media/v4l2-core/v4l2-dev.c
+		 */
 		unregister_chrdev_region(dev, 1);
 		return -ENOMEM;
 	}
@@ -61,7 +67,7 @@ static int __init reminder_init(void)
 	cdev_init(reminder_cdev, &reminder_fops);
 	rt = cdev_add(reminder_cdev, dev, 1);
 	if (rt) {
-		cdev_del(reminder_cdev); //SHOULD IT BE HERE?
+		kfree(reminder_cdev);
 		unregister_chrdev_region(dev, 1);
 		kfree(message);
 		return rt;
@@ -76,6 +82,7 @@ static int __exit reminder_exit(void)
 	cdev_del(reminder_cdev);
 	unregister_chrdev_region(dev, 1);
 	kfree(message);	
+	return 0;
 }
 
 module_init(reminder_init);
