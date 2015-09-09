@@ -22,10 +22,11 @@ int main (int argc, char *argv[])
 	printf("fd equal to %d, should be < 0\n", fd);
 	printf("\nOpening char dev with good operation flag - O_WRONLY\n");
 	fd = open("/dev/reminder", O_WRONLY);
-	perror("open");
 	printf("fd equal to %d, should be > 0\n", fd);
-	if (fd < 0)
+	if (fd < 0) {
+		perror("open");
 		return 1;
+	}
 	printf("Starting writing test\n");
 	if(argc == 2) {
 		line_to_write = "THIS STRING CONTAINS FAR MORE THAN 32 CHARS" 

@@ -23,8 +23,8 @@ ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, lo
 {
 	ssize_t notwr = 0;
 	int temp = 0;
-	if (nbytes > BUF_SIZE) {
-		nbytes = BUF_SIZE;
+	if (nbytes >= BUF_SIZE) {
+		nbytes = BUF_SIZE - 1;
 		temp = 1;
 	}
 	notwr = copy_from_user(message, buf, nbytes);
@@ -60,6 +60,8 @@ static int __init reminder_init(void)
 	int rt;
 	size_t msg_size = BUF_SIZE;
 	struct device *device = NULL;
+	if (message)
+		return -EEXIST;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
 		return rt;
@@ -67,47 +69,44 @@ static int __init reminder_init(void)
 	reminder_class = class_create(THIS_MODULE, "reminder");
 	if (IS_ERR(reminder_class)) {
 		rt = PTR_ERR(reminder_class);
-		unregister_chrdev_region(dev, 1);
-		return rt;
+		goto err;
 	}
 	reminder_cdev = cdev_alloc();
 	if (!reminder_cdev) {
-		class_destroy(reminder_class);
-		unregister_chrdev_region(dev, 1);
-		return -ENOMEM;
+		rt = -ENOMEM;
+		goto err;
 	}
 	
 	message = kmalloc(msg_size, GFP_KERNEL);
 	if (!message) {
 		kfree(reminder_cdev);
-		class_destroy(reminder_class);
-		/*
-		 * it is legal to free cdev by kdev, 
-		 * look to drivers/media/v4l2-core/v4l2-dev.c
-		 */
-		unregister_chrdev_region(dev, 1);
+		 /* look to drivers/media/v4l2-core/v4l2-dev.c*/
+		reminder_cdev = NULL;
 		return -ENOMEM;
 	}
 	memset(message, 0, msg_size);
 	cdev_init(reminder_cdev, &reminder_fops);
 	rt = cdev_add(reminder_cdev, dev, 1);
 	if (rt) {
-		class_destroy(reminder_class);
 		kfree(reminder_cdev);
-		unregister_chrdev_region(dev, 1);
-		kfree(message);
-		return rt;
+		reminder_cdev = NULL;
+		goto err;
 	}
 	device = device_create(reminder_class, NULL, dev, NULL, "reminder");
 	if (IS_ERR(device)) {
 		rt = PTR_ERR(device);
-		cdev_del(reminder_cdev);
-		class_destroy(reminder_class);
-		kfree(message);
-		unregister_chrdev_region(dev, 1);
-		return rt;
+		goto err;
 	}
 	return 0;
+err:
+	if (reminder_cdev)
+		cdev_del(reminder_cdev);		
+	if (reminder_class)
+		class_destroy(reminder_class);
+	if (message)
+		kfree(message);
+	unregister_chrdev_region(dev, 1);
+	return rt;
 }
 
 static void __exit reminder_exit(void)

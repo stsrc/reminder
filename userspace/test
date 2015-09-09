@@ -20,9 +20,9 @@ echo "---------------------------------------------------"
 sudo insmod ../kernelspace/reminder.ko
 if [ $? -ne 0 ]; then
 	echo
-	echo "---------!!!---------"
-	echo "Module insert failed!"
-	echo "---------!!!---------"
+	echo "-----------!!!----------"
+	echo "Module insertion failed!"
+	echo "-----------!!!----------"
 	echo
 	exit 1
 fi
@@ -40,15 +40,15 @@ sudo rmmod reminder
 if [ $? -ne 0 ]; then
 	echo
 	echo "----------!!!----------"
-	echo "Removing module failed!"
+	echo "Module removing failed!"
 	echo "----------!!!----------"
 	echo	
 	exit 1
 fi
 echo
-echo "----------------------------------------------------------------------------"
-echo "Above line should present test string, waiting 3 sec for second test"
-echo "----------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------"
+echo "Above line should present test string. Now waiting 3 sec for second test"
+echo "------------------------------------------------------------------------"
 echo
 sleep 3
 echo "----------------------------------"
@@ -58,9 +58,9 @@ echo
 sudo insmod ../kernelspace/reminder.ko
 if [ $? -ne 0 ]; then
 	echo
-	echo "---------!!!---------"
-	echo "Module insert failed!"
-	echo "---------!!!---------"
+	echo "-----------!!!----------"
+	echo "Module insertion failed!"
+	echo "-----------!!!----------"
 	echo
 	exit 1
 fi
@@ -85,5 +85,8 @@ if [ $? -ne 0 ]; then
 	echo	
 	exit 1
 fi
+
+echo "If you don't see \"module work\", check whether messages are in dmesg"
+
 echo "END OF TEST END OF TEST END OF TEST END OF TEST END OF TEST END OF TEST END OF TEST"
 	
