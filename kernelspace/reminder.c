@@ -10,6 +10,8 @@
 #include <linux/slab.h> 
 #include <linux/device.h>
 #include <linux/err.h>
+#include <linux/keyboard.h>
+
 
 MODULE_LICENSE("GPL");
 
@@ -22,10 +24,11 @@ volatile static int wait_for_keypress = 1;
 
 int button_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
 {
-	wait_for_keypress = 0;		
+	wait_for_keypress = 0;
+	return 0;	
 }
 
-struct notifier_block nb {
+struct notifier_block nb = {
 	.notifier_call = button_pressed
 };
 
