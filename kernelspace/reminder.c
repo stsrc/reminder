@@ -125,7 +125,6 @@ err:
 static void __exit reminder_exit(void)
 {
 	printk(KERN_EMERG "%s\n", message);
-	//it might be my most stupid idea.
 	printk(KERN_EMERG "To continue press any key\n");
 	register_keyboard_notifier(&nb);
 	while(wait_for_keypress){}
