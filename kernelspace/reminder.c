@@ -17,7 +17,17 @@ static struct cdev *reminder_cdev = NULL;
 static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
+volatile static int wait_for_keypress = 1;
 #define BUF_SIZE 32
+
+int button_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
+{
+	wait_for_keypress = 0;		
+}
+
+struct notifier_block nb {
+	.notifier_call = button_pressed
+};
 
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
@@ -112,6 +122,11 @@ err:
 static void __exit reminder_exit(void)
 {
 	printk(KERN_EMERG "%s\n", message);
+	//it might be my most stupid idea.
+	printk(KERN_EMERG "To continue press any key\n");
+	register_keyboard_notifier(&nb);
+	while(wait_for_keypress){}
+	unregister_keyboard_notifier(&nb);
 	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
 	class_destroy(reminder_class);
