@@ -58,7 +58,7 @@ void print_line(void)
 		if (!line)
 			return;
 		memset(line, '-', strlen(message));
-		line[strlen(message) - 1] = '\0';
+		line[strlen(message)] = '\0';
 	} else {
 		/*
 		 * I have only counted chars in message, which is 
