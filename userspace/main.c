@@ -38,7 +38,7 @@ int main (int argc, char *argv[])
 	printf("\nOpening device\n");
 	fd = open("/dev/reminder", O_WRONLY);
 	if (fd < 0) {
-		printf("fd equal to %d, should be > 0\n", fd);
+		printf("Device opening failed, fd is equal to %d, should be > 0\n", fd);
 		perror("open");
 		return 1;
 	} else {
@@ -57,5 +57,12 @@ int main (int argc, char *argv[])
 		perror("write");
 		printf("Error occured, ret value equal to %d\n", (int)ret);
 	}
+	ret = close(fd);
+	if (ret) {
+		perror("close");
+		printf("Device closing failed\n");
+		return 1;
+	}
+	printf("Device has been closed properly, program ends\n");
 	return 0;
 }

@@ -1,4 +1,4 @@
-ccflags-y += -DDEBUG
+ccflags-y += -DDEBUG -std=gnu99 -Wno-declaration-after-statement
 ifneq ($(KERNELRELEASE),)
 	obj-m := reminder.o
 

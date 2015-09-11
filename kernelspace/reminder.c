@@ -20,10 +20,19 @@ static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
-#define CHAR_LIMIT 160
+#define CHARS_LIMIT 160
 #define LINE_WIDTH 80
 #define PLVL KERN_EMERG
-	
+
+void print_line(void);
+void present_message(void);
+
+int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
+{
+	present_message();
+	return 0;
+}
+
 int notf_btn_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
 {
 	wait_for_keypress = 0;
@@ -34,25 +43,18 @@ static struct notifier_block nb = {
 	.notifier_call = notf_btn_pressed
 };
 
-
-int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
-{
-	present_message();
-	return 0;
-}
-
 static struct notifier_block rb_nb = {
 	.notifier_call = notf_shutdown
 };
 
-void print_line()
+void print_line(void)
 {
 	for(int it = 0; it < LINE_WIDTH; it++)
 		printk(PLVL "-");
 	printk(PLVL "\n");
 }
 
-void present_message()
+void present_message(void)
 {
 	printk(PLVL "Message from reminder module:\n");
 	print_line();
@@ -71,17 +73,21 @@ ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, lo
 {
 	ssize_t notwr = 0;
 	int temp = 0;
-	if (nbytes >= BUF_SIZE) {
-		nbytes = BUF_SIZE - 1;
+	if (nbytes >= CHARS_LIMIT) {
+		nbytes = CHARS_LIMIT - 1;
 		temp = 1;
+	}
+	if (message) {
+		kfree(message);
+		message = NULL;
 	}
 	message = kmalloc(nbytes, GFP_KERNEL);
 	if (!message)
 		return -ENOMEM;
-	memset(message, 0, msg_size);
+	memset(message, 0, nbytes);
 	notwr = copy_from_user(message, buf, nbytes);
 	if (temp)
-		message[BUF_SIZE - 1] = '\0';
+		message[CHARS_LIMIT - 1] = '\0';
 	if (notwr)
 		return -ENOSPC;
 	return nbytes;
@@ -146,8 +152,6 @@ err:
 		cdev_del(reminder_cdev);		
 	if (reminder_class)
 		class_destroy(reminder_class);
-	if (message)
-		kfree(message);
 	unregister_chrdev_region(dev, 1);
 	return rt;
 }
@@ -159,7 +163,10 @@ static void __exit reminder_exit(void)
 	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
 	class_destroy(reminder_class);
-	kfree(message);
+	if (message) {
+		kfree(message);
+		message = NULL;
+	}
 	unregister_chrdev_region(dev, 1);
 }
 
