@@ -21,7 +21,7 @@ static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
 #define CHARS_LIMIT 160
-#define LINE_WIDTH 80
+#define LINE_WIDTH 160
 #define PLVL KERN_EMERG
 
 void print_line(void);
@@ -49,9 +49,10 @@ static struct notifier_block rb_nb = {
 
 void print_line(void)
 {
-	for(int it = 0; it < LINE_WIDTH; it++)
-		printk(PLVL "-");
-	printk(PLVL "\n");
+	char line[LINE_WIDTH];
+	memset(line, '-', LINE_WIDTH - 2);
+	line[LINE_WIDTH - 1] = '\0';
+	printk(PLVL "%s\n", line);
 }
 
 void present_message(void)
@@ -81,10 +82,10 @@ ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, lo
 		kfree(message);
 		message = NULL;
 	}
-	message = kmalloc(nbytes, GFP_KERNEL);
+	message = kmalloc(nbytes + 1, GFP_KERNEL);
 	if (!message)
 		return -ENOMEM;
-	memset(message, 0, nbytes);
+	memset(message, 0, nbytes + 1);
 	notwr = copy_from_user(message, buf, nbytes);
 	if (temp)
 		message[CHARS_LIMIT - 1] = '\0';
