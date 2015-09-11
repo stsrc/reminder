@@ -5,18 +5,22 @@
 #include <string.h>
 #include <stdlib.h>
 
-
+//BUF LIMIT SHOULD BE PARAMETRIZED!
 int parser (int argc, char *argv[], char **message, ssize_t *size_of_line)
 {
-	char temp[32];
+	char temp[160];
+	memset(temp, 0, 160);
 	if (argc == 1) {
-		printf("Write message which you would like to present.\n");
+		printf("Write message which you would like to present ");
+		printf("(note: message can not exceed more than 160 characters.\n");
 		fscanf(stdin, "%s", temp);
 		*message = malloc(strlen(temp) + 1);
+		memset(*message, 0, strlen(temp) + 1);
 		strcpy(*message, temp);
 	} else if (argc == 2)
 	{
 		*message = malloc(strlen(argv[1]) + 1);
+		memset(*message, 0, strlen(argv[1]) + 1);
 		strcpy(*message, argv[1]);
 	} else {
 		printf("Wrong input argument. Put message into double quotes.\n");
