@@ -12,6 +12,7 @@
 #include <linux/err.h>
 #include <linux/keyboard.h>
 #include <linux/reboot.h>
+#include <linux/moduleparam.h>
 
 MODULE_LICENSE("GPL");
 
@@ -20,8 +21,10 @@ static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
-#define CHARS_LIMIT 160
-#define LINE_WIDTH 160
+
+int chars_limit = 160;
+module_param(chars_limit, int, 0);
+
 #define PLVL KERN_EMERG
 
 void print_line(void);
@@ -49,10 +52,26 @@ static struct notifier_block rb_nb = {
 
 void print_line(void)
 {
-	char line[LINE_WIDTH];
-	memset(line, '-', LINE_WIDTH - 2);
-	line[LINE_WIDTH - 1] = '\0';
+	char *line;
+	if (message) {
+		line = kmalloc(strlen(message) + 1, GFP_KERNEL);
+		if (!line)
+			return;
+		memset(line, '-', strlen(message));
+		line[strlen(message) - 1] = '\0';
+	} else {
+		/*
+		 * I have only counted chars in message, which is 
+		 * in if (!message) condition (look below)
+		 */
+		line = kmalloc(51, GFP_KERNEL);
+		if (!line)
+			return;
+		memset(line, '-', 50);
+		line[50] = '\0';
+	}
 	printk(PLVL "%s\n", line);
+	kfree(line);
 }
 
 void present_message(void)
@@ -62,7 +81,7 @@ void present_message(void)
 	if (!message)
 		printk(PLVL "!!!Message has not been written into the driver!!!\n");
 	else
-		printk(PLVL "     %s\n", message);
+		printk(PLVL "%s\n", message);
 	print_line();
 	printk(PLVL "End of message. Press any key to continue.\n");
 	register_keyboard_notifier(&nb);
@@ -73,11 +92,8 @@ void present_message(void)
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
 	ssize_t notwr = 0;
-	int temp = 0;
-	if (nbytes >= CHARS_LIMIT) {
-		nbytes = CHARS_LIMIT - 1;
-		temp = 1;
-	}
+	if (nbytes > chars_limit)
+		nbytes = chars_limit;
 	if (message) {
 		kfree(message);
 		message = NULL;
@@ -87,8 +103,6 @@ ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, lo
 		return -ENOMEM;
 	memset(message, 0, nbytes + 1);
 	notwr = copy_from_user(message, buf, nbytes);
-	if (temp)
-		message[CHARS_LIMIT - 1] = '\0';
 	if (notwr)
 		return -ENOSPC;
 	return nbytes;

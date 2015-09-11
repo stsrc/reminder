@@ -14,10 +14,17 @@ if [ $? -eq 1 ]; then
 	echo "Mode change of file /dev/reminder failed"
 	exit 1
 fi
-if [ "$1" == "-s" ]; then
-	sudo shutdown now
-elif [ "$1" == "-r" ]; then
-	sudo reboot now
+
+if [ $# -eq 2 ]; then
+	../userspace/main "$2"	
+	if [ "$1" == "-s" ]; then
+		sudo shutdown now
+	elif [ "$1" == "-r" ]; then
+		sudo reboot now
+	else
+		echo "Wrong input args"
+		exit 0
+	fi
 else
 	exit 0
 fi
