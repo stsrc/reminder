@@ -42,7 +42,7 @@ int main (int argc, char *argv[])
 		perror("open");
 		return 1;
 	} else {
-		printf("Device has been opened properly");
+		printf("Device has been opened properly\n");
 	}
 	ret = write(fd, line_to_write, (size_t)size_of_line);
 	if(ret >= 0) {
@@ -51,7 +51,8 @@ int main (int argc, char *argv[])
 			printf("is equal ");
 		else 
 			printf("is not equal ");
-		printf("to the number of written bytes: %d!\n",(int)ret);
+		printf("to the number of written bytes: %d.\n",(int)ret);
+		printf("Driver is ready to present string.\n");
 	} else {
 		perror("write");
 		printf("Error occured, ret value equal to %d\n", (int)ret);

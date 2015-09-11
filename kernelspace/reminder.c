@@ -11,7 +11,7 @@
 #include <linux/device.h>
 #include <linux/err.h>
 #include <linux/keyboard.h>
-
+#include <linux/reboot.h>
 
 MODULE_LICENSE("GPL");
 
@@ -21,18 +21,31 @@ static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
 #define BUF_SIZE 32
-#define RELEASE_SIGN 'q'
-int button_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
+
+int notf_btn_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
 {
-	struct keyboard_notifier_param *param = _param;
-	printk(KERN_EMERG "key pressed: %d\n", (int)param->value);
-	if (param->value == RELEASE_SIGN)
-			wait_for_keypress = 0;
+	wait_for_keypress = 0;
 	return 0;	
 }
 
-struct notifier_block nb = {
-	.notifier_call = button_pressed
+static struct notifier_block nb = {
+	.notifier_call = notf_btn_pressed
+};
+
+
+int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
+{
+	printk(KERN_EMERG "Message from reminder module:\n");
+	printk(KERN_EMERG "     %s\n", message);
+	printk(KERN_EMERG "End of message. Press any key to continue.\n");
+	register_keyboard_notifier(&nb);
+	while(wait_for_keypress){}
+	unregister_keyboard_notifier(&nb);
+	return 0;
+}
+
+static struct notifier_block rb_nb = {
+	.notifier_call = notf_shutdown
 };
 
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
@@ -62,8 +75,6 @@ int reminder_release(struct inode *node, struct file *f)
 {
 	return 0;
 }
-
-
 
 const struct file_operations reminder_fops = {
 	.write = reminder_write,
@@ -113,6 +124,9 @@ static int __init reminder_init(void)
 		rt = PTR_ERR(device);
 		goto err;
 	}
+	rt = register_reboot_notifier(&rb_nb);
+	if (rt)
+		goto err;
 	return 0;
 err:
 	if (reminder_cdev)
@@ -128,10 +142,11 @@ err:
 static void __exit reminder_exit(void)
 {
 	printk(KERN_EMERG "%s\n", message);
-	printk(KERN_EMERG "To continue press Enter.\n");
+	printk(KERN_EMERG "To continue press any key.\n");
 	register_keyboard_notifier(&nb);
 	while(wait_for_keypress){}
 	unregister_keyboard_notifier(&nb);
+	unregister_reboot_notifier(&rb_nb);
 	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
 	class_destroy(reminder_class);
