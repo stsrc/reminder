@@ -20,8 +20,10 @@ static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
-#define BUF_SIZE 32
-
+#define CHAR_LIMIT 160
+#define LINE_WIDTH 80
+#define PLVL KERN_EMERG
+	
 int notf_btn_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
 {
 	wait_for_keypress = 0;
@@ -35,18 +37,35 @@ static struct notifier_block nb = {
 
 int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
 {
-	printk(KERN_EMERG "Message from reminder module:\n");
-	printk(KERN_EMERG "     %s\n", message);
-	printk(KERN_EMERG "End of message. Press any key to continue.\n");
-	register_keyboard_notifier(&nb);
-	while(wait_for_keypress){}
-	unregister_keyboard_notifier(&nb);
+	present_message();
 	return 0;
 }
 
 static struct notifier_block rb_nb = {
 	.notifier_call = notf_shutdown
 };
+
+void print_line()
+{
+	for(int it = 0; it < LINE_WIDTH; it++)
+		printk(PLVL "-");
+	printk(PLVL "\n");
+}
+
+void present_message()
+{
+	printk(PLVL "Message from reminder module:\n");
+	print_line();
+	if (!message)
+		printk(PLVL "!!!Message has not been written into the driver!!!\n");
+	else
+		printk(PLVL "     %s\n", message);
+	print_line();
+	printk(PLVL "End of message. Press any key to continue.\n");
+	register_keyboard_notifier(&nb);
+	while(wait_for_keypress){}
+	unregister_keyboard_notifier(&nb);
+}
 
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
@@ -56,6 +75,10 @@ ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, lo
 		nbytes = BUF_SIZE - 1;
 		temp = 1;
 	}
+	message = kmalloc(nbytes, GFP_KERNEL);
+	if (!message)
+		return -ENOMEM;
+	memset(message, 0, msg_size);
 	notwr = copy_from_user(message, buf, nbytes);
 	if (temp)
 		message[BUF_SIZE - 1] = '\0';
@@ -85,7 +108,6 @@ const struct file_operations reminder_fops = {
 static int __init reminder_init(void)
 {
 	int rt;
-	size_t msg_size = BUF_SIZE;
 	struct device *device = NULL;
 	if (message)
 		return -EEXIST;
@@ -103,15 +125,6 @@ static int __init reminder_init(void)
 		rt = -ENOMEM;
 		goto err;
 	}
-	
-	message = kmalloc(msg_size, GFP_KERNEL);
-	if (!message) {
-		kfree(reminder_cdev);
-		 /* look to drivers/media/v4l2-core/v4l2-dev.c*/
-		reminder_cdev = NULL;
-		return -ENOMEM;
-	}
-	memset(message, 0, msg_size);
 	cdev_init(reminder_cdev, &reminder_fops);
 	rt = cdev_add(reminder_cdev, dev, 1);
 	if (rt) {
@@ -141,11 +154,7 @@ err:
 
 static void __exit reminder_exit(void)
 {
-	printk(KERN_EMERG "%s\n", message);
-	printk(KERN_EMERG "To continue press any key.\n");
-	register_keyboard_notifier(&nb);
-	while(wait_for_keypress){}
-	unregister_keyboard_notifier(&nb);
+	present_message();
 	unregister_reboot_notifier(&rb_nb);
 	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
