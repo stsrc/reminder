@@ -21,10 +21,13 @@ static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
 #define BUF_SIZE 32
-
+#define RELEASE_SIGN 'q'
 int button_pressed(struct notifier_block *nblock, unsigned long code, void *_param)
 {
-	wait_for_keypress = 0;
+	struct keyboard_notifier_param *param = _param;
+	printk(KERN_EMERG "key pressed: %d\n", (int)param->value);
+	if (param->value == RELEASE_SIGN)
+			wait_for_keypress = 0;
 	return 0;	
 }
 
@@ -125,7 +128,7 @@ err:
 static void __exit reminder_exit(void)
 {
 	printk(KERN_EMERG "%s\n", message);
-	printk(KERN_EMERG "To continue press any key\n");
+	printk(KERN_EMERG "To continue press Enter.\n");
 	register_keyboard_notifier(&nb);
 	while(wait_for_keypress){}
 	unregister_keyboard_notifier(&nb);

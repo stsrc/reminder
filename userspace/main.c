@@ -10,15 +10,14 @@ int parser (int argc, char *argv[], char **message, ssize_t *size_of_line)
 {
 	char temp[32];
 	if (argc == 1) {
-		printf("Write message to present at removing of module.\n"
-				"There is 32 character limit:\n");
+		printf("Write message which you would like to present.\n");
 		fscanf(stdin, "%s", temp);
 		*message = malloc(strlen(temp) + 1);
-		strcpy(message, temp);
+		strcpy(*message, temp);
 	} else if (argc == 2)
 	{
 		*message = malloc(strlen(argv[1]) + 1);
-		strcpy(message, argv[1]);
+		strcpy(*message, argv[1]);
 	} else {
 		printf("Wrong input argument. Put message into double quotes.\n");
 	       	return 1;
@@ -30,11 +29,11 @@ int parser (int argc, char *argv[], char **message, ssize_t *size_of_line)
 
 int main (int argc, char *argv[])
 {
-	char *line_to_write = null;
+	char *line_to_write = NULL;
 	ssize_t size_of_line;
 	ssize_t ret = 0;
 	int fd;
-	if (parser(argc, argc, &line_to_write, &size_of_line))
+	if (parser(argc, argv, &line_to_write, &size_of_line))
 		return 1;
 	printf("\nOpening device\n");
 	fd = open("/dev/reminder", O_WRONLY);
