@@ -25,9 +25,11 @@ static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
 static int chars_limit = 160;
 module_param(chars_limit, int, S_IRUGO);
-MODULE_PARM_DESC(chars_limit, "Variable which value determines max. number of characters in string to remind.\n");
+MODULE_PARM_DESC(chars_limit, "Variable which value determines max. number "
+		"of characters in string to remind.\n");
 module_param(message, charp, 0);
-MODULE_PARM_DESC(message, "Pointer to string, which can be used at insertion of module to initalize message immediately.\n");
+MODULE_PARM_DESC(message, "Pointer to string, which can be used at "
+		"insertion of module to initalize message immediately.\n");
 /*if message is set while inserting module, then cmdmsg variable (below) is set to 1*/
 static int cmdmsg = 0; 
 #define PLVL KERN_EMERG
