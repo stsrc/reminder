@@ -74,11 +74,11 @@ void print_line(void)
 		 * I have only counted chars in message, which is 
 		 * in if (!message) condition (look below)
 		 */
-		line = kmalloc(51, GFP_KERNEL);
+		line = kmalloc(52, GFP_KERNEL);
 		if (!line)
 			return;
-		memset(line, '-', 50);
-		line[50] = '\0';
+		memset(line, '-', 51);
+		line[51] = '\0';
 	}
 	printk(PLVL "%s\n", line);
 	kfree(line);
