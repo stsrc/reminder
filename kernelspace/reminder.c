@@ -15,7 +15,6 @@
 #include <linux/moduleparam.h>
 #include <linux/stat.h>
 
-
 MODULE_LICENSE("GPL");
 
 static struct cdev *reminder_cdev = NULL;
@@ -26,12 +25,16 @@ volatile static int wait_for_keypress = 1;
 static int chars_limit = 160;
 module_param(chars_limit, int, S_IRUGO);
 MODULE_PARM_DESC(chars_limit, "Variable which value determines max. number "
-		"of characters in string to remind.\n");
+		"of characters in message.\n");
 module_param(message, charp, 0);
 MODULE_PARM_DESC(message, "Pointer to string, which can be used at "
-		"insertion of module to initalize message immediately.\n");
-/*if message is set while inserting module, then cmdmsg variable (below) is set to 1*/
+		"time of module insertion to initalize message immediately.\n");
+/*
+ * if the message is set in time of module insertion,
+ *  then the cmdmsg variable will be set to 1
+ */
 static int cmdmsg = 0; 
+
 #define PLVL KERN_EMERG
 
 void print_line(void);
