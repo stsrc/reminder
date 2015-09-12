@@ -13,6 +13,7 @@
 #include <linux/keyboard.h>
 #include <linux/reboot.h>
 #include <linux/moduleparam.h>
+#include <linux/stat.h>
 
 MODULE_LICENSE("GPL");
 
@@ -21,10 +22,15 @@ static char *message = NULL;
 static dev_t dev;
 static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
-
-int chars_limit = 160;
-module_param(chars_limit, int, 0);
-
+static int chars_limit = 160;
+module_param(chars_limit, int, S_IRUGO);
+MODULE_PARAM_DESC(chars_limit, "Variable which value determines max. number of characters in string"
+		" to remind.\n");
+module_param(message, charp, 0);
+MODULE_PARAM_DESC("Pointer to string, which can be used at insertion of module to initalize"
+		" message immediately.\n");
+/*if message is set while inserting module, then cmdmsg variable (below) is set to 1*/
+static int cmdmsg = 0; 
 #define PLVL KERN_EMERG
 
 void print_line(void);
@@ -33,6 +39,15 @@ void present_message(void);
 int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
 {
 	present_message();
+	unregister_reboot_notifier(&rb_nb);
+	device_destroy(reminder_class, dev);
+	cdev_del(reminder_cdev);
+	class_destroy(reminder_class);
+	if (message && (!cmdmsg)) {
+		kfree(message);
+		message = NULL;
+	}
+	unregister_chrdev_region(dev, 1);
 	return 0;
 }
 
@@ -92,6 +107,8 @@ void present_message(void)
 ssize_t reminder_write(struct file *f, const char __user *buf, size_t nbytes, loff_t *ppos)
 {
 	ssize_t notwr = 0;
+	if (cmdmsg)
+		return -EPERM;
 	if (nbytes > chars_limit)
 		nbytes = chars_limit;
 	if (message) {
@@ -131,7 +148,7 @@ static int __init reminder_init(void)
 	int rt;
 	struct device *device = NULL;
 	if (message)
-		return -EEXIST;
+		cmdmsg = 1;
 	rt = alloc_chrdev_region(&dev, 0, 1, "reminder");
 	if (rt)
 		return rt;
@@ -178,7 +195,7 @@ static void __exit reminder_exit(void)
 	device_destroy(reminder_class, dev);
 	cdev_del(reminder_cdev);
 	class_destroy(reminder_class);
-	if (message) {
+	if (message && (!cmdmsg)) {
 		kfree(message);
 		message = NULL;
 	}
