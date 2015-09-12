@@ -14,6 +14,7 @@
 #include <linux/reboot.h>
 #include <linux/moduleparam.h>
 #include <linux/stat.h>
+#include <linux/init.h>
 
 MODULE_LICENSE("GPL");
 
@@ -24,17 +25,20 @@ static struct class *reminder_class = NULL;
 volatile static int wait_for_keypress = 1;
 static int chars_limit = 160;
 module_param(chars_limit, int, S_IRUGO);
-MODULE_PARAM_DESC(chars_limit, "Variable which value determines max. number of characters in string"
-		" to remind.\n");
+MODULE_PARM_DESC(chars_limit, "Variable which value determines max. number of characters in string to remind.\n");
 module_param(message, charp, 0);
-MODULE_PARAM_DESC("Pointer to string, which can be used at insertion of module to initalize"
-		" message immediately.\n");
+MODULE_PARM_DESC(message, "Pointer to string, which can be used at insertion of module to initalize message immediately.\n");
 /*if message is set while inserting module, then cmdmsg variable (below) is set to 1*/
 static int cmdmsg = 0; 
 #define PLVL KERN_EMERG
 
 void print_line(void);
 void present_message(void);
+int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param);
+
+static struct notifier_block rb_nb = {
+	.notifier_call = notf_shutdown
+};
 
 int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
 {
@@ -59,10 +63,6 @@ int notf_btn_pressed(struct notifier_block *nblock, unsigned long code, void *_p
 
 static struct notifier_block nb = {
 	.notifier_call = notf_btn_pressed
-};
-
-static struct notifier_block rb_nb = {
-	.notifier_call = notf_shutdown
 };
 
 void print_line(void)
