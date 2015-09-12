@@ -43,15 +43,10 @@ static struct notifier_block rb_nb = {
 int notf_shutdown(struct notifier_block *nblock, unsigned long code, void *_param)
 {
 	present_message();
-	unregister_reboot_notifier(&rb_nb);
-	device_destroy(reminder_class, dev);
-	cdev_del(reminder_cdev);
-	class_destroy(reminder_class);
-	if (message && (!cmdmsg)) {
+	if ((!cmdmsg) && message) {
 		kfree(message);
 		message = NULL;
 	}
-	unregister_chrdev_region(dev, 1);
 	return 0;
 }
 
@@ -67,7 +62,7 @@ static struct notifier_block nb = {
 
 void print_line(void)
 {
-	char *line;
+	char *line = NULL;
 	if (message) {
 		line = kmalloc(strlen(message) + 1, GFP_KERNEL);
 		if (!line)
@@ -94,7 +89,7 @@ void present_message(void)
 	printk(PLVL "Message from reminder module:\n");
 	print_line();
 	if (!message)
-		printk(PLVL "!!!Message has not been written into the driver!!!\n");
+		printk(PLVL "!!!No message has been written into the reminder!!!\n");
 	else
 		printk(PLVL "%s\n", message);
 	print_line();
