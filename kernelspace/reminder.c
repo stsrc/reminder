@@ -14,7 +14,7 @@
 #include <linux/reboot.h>
 #include <linux/moduleparam.h>
 #include <linux/stat.h>
-#include <linux/init.h>
+
 
 MODULE_LICENSE("GPL");
 
