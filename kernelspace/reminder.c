@@ -28,7 +28,10 @@ MODULE_PARM_DESC(chars_limit, "Variable which value determines max. number "
 		"of characters in message.\n");
 module_param(message, charp, 0);
 MODULE_PARM_DESC(message, "Pointer to string, which can be used at "
-		"time of module insertion to initalize message immediately.\n");
+		"time of module insertion to initalize message immediately.\n"
+		"If you want to pass string with one or more spaces, string" 
+		" must be inside double quotes, i. e.: command should be like:"
+		" insmod reminder.ko \"\\\"string to remind\\\"\"\n");
 /*
  * if the message is set in time of module insertion,
  *  then the cmdmsg variable will be set to 1
