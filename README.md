@@ -1,1 +1,4 @@
-Linux module, as name suggests, which will remind of something on kernel reboot/shutdown. Message will be set by userspace program.
+# Reminder - Linux module
+
+Module which presents some message on time of kernel reboot or shutdown.  
+Message can be entered in time of module insertion or later, by writing string to device node from user space.
