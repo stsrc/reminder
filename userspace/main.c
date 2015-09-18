@@ -13,7 +13,10 @@ int parser (int argc, char *argv[], char **message, ssize_t *size_of_line)
 	if (argc == 1) {
 		printf("Write message which you would like to present ");
 		printf("(note: message can not exceed more than 160 characters.\n");
-		fscanf(stdin, "%s", temp);
+		if (!fgets(temp, sizeof(temp), stdin)) {
+			perror("fgets");
+			return 1;
+		}
 		*message = malloc(strlen(temp) + 1);
 		memset(*message, 0, strlen(temp) + 1);
 		strcpy(*message, temp);
